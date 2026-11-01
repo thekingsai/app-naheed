@@ -39,12 +39,17 @@ const SPECIALIST = (sp, title) => `YOUR ROLE IN THIS ANSWER: you are the special
 - Use the reply length, mode, inline [[Source | exact words]] markers and the Sources line as instructed.
 - Start directly with your answer. No heading with your name or role.`;
 
-const SENIOR = (sp, title) => `YOUR ROLE IN THIS ANSWER: you are the senior physician, a chief of internal medicine with deep knowledge across every field. A ${title} (${sp}) has just answered the family's question; their answer is below.
-1. Review it critically against her WHOLE record and current evidence: what is right, what is wrong or overstated, what is missing, and how her other conditions and medicines change the picture (heart, kidneys, RA and Truxima, osteoporosis, allergies to aspirin and ibuprofen, lungs).
+const SENIOR_BLIND = (sp) => `YOUR ROLE IN THIS ANSWER: you are the senior physician, a chief of internal medicine with deep knowledge across every field. Give your OWN independent view of the family's question, looking at her whole record (heart, kidneys, RA and Truxima, osteoporosis, allergies to aspirin and ibuprofen, lungs) and current evidence.
+- A ${sp} specialist is answering the same question separately; you will compare answers afterwards, so think for yourself and don't guess what they will say.
+- Be completely honest; never soften anything or please anyone. Say how certain you are.
+- Keep it concise: the key points and your reasoning, with [[Source | exact words]] markers. No Sources line, no headings with your name or role.`;
+
+const SENIOR = (sp, title) => `YOUR ROLE IN THIS ANSWER: you are the senior physician, a chief of internal medicine with deep knowledge across every field. A ${title} (${sp}) has answered the family's question. Before seeing their answer, you wrote your own independent view; both are below.
+1. Compare the ${title}'s answer with your own view and review it critically against her WHOLE record and current evidence. Where you and the specialist differ, decide who is right based on her record and the evidence, and say so: what is right, what is wrong or overstated, what is missing, and how her other conditions and medicines change the picture (heart, kidneys, RA and Truxima, osteoporosis, allergies to aspirin and ibuprofen, lungs).
    Be completely honest. Agree briefly where the specialist is right; never invent disagreements; never soften or please anyone.
 2. Then give the final combined answer the family should rely on.
 Output format, exactly:
-- Your review first: 3 to 6 short bullets, each starting with "Agree:", "Correction:", "Adds:" or "Caution:". Use [[Source | exact words]] markers.
+- Your review first: 3 to 6 short bullets, each starting with "Agree:", "Differ:", "Correction:", "Adds:" or "Caution:". Use [[Source | exact words]] markers.
 - Then a line containing only %%FINAL%%
 - Then the final combined answer, following the reply length and mode, with inline [[Source | exact words]] markers and ending with the Sources line.
 No headings with your name or role.`;
@@ -165,17 +170,22 @@ export async function POST(req) {
             onSearch: () => send({ type: 'naheed_status', text: 'Checking current medical guidance on the web…' }) });
           stored = txt; finalText = txt;
         } else {
-          send({ type: 'naheed_stage', stage: 'specialist', specialty: plan.specialty, title: plan.title });
-          const spec = await callModel({ key, model: 'claude-opus-5-5', system: [...base, { type: 'text', text: SPECIALIST(plan.specialty, plan.title) }], messages: msgs, max_tokens: L.m,
-            onText: (t) => send({ type: 'naheed_delta', stage: 'specialist', text: t }), onWeb: (u, t) => send({ type: 'naheed_web', url: u, title: t }),
-            onSearch: () => send({ type: 'naheed_status', text: `The ${plan.title} is checking current guidance…` }) });
+          send({ type: 'naheed_stage', stage: 'parallel', specialty: plan.specialty, title: plan.title });
+          // The specialist and the senior doctor each form their own view at the same time, without seeing the other's.
+          const [spec, blind] = await Promise.all([
+            callModel({ key, model: 'claude-opus-5-5', system: [...base, { type: 'text', text: SPECIALIST(plan.specialty, plan.title) }], messages: msgs, max_tokens: L.m,
+              onText: (t) => send({ type: 'naheed_delta', stage: 'specialist', text: t }), onWeb: (u, t) => send({ type: 'naheed_web', url: u, title: t }),
+              onSearch: () => send({ type: 'naheed_status', text: `The ${plan.title} is checking current guidance…` }) }),
+            callModel({ key, model: 'claude-fable-5-1', system: [...base, { type: 'text', text: SENIOR_BLIND(plan.specialty) }], messages: msgs, max_tokens: L.m,
+              onText: (t) => send({ type: 'naheed_delta', stage: 'blind', text: t }), onWeb: (u, t) => send({ type: 'naheed_web', url: u, title: t }) }),
+          ]);
           send({ type: 'naheed_stage', stage: 'senior' });
-          const seniorMsgs = [...past, { role: 'user', content: `${question}\n\n(${L.t} ${M})\n\nTHE ${plan.title.toUpperCase()}'S ANSWER TO REVIEW:\n${spec}` }];
+          const seniorMsgs = [...past, { role: 'user', content: `${question}\n\n(${L.t} ${M})\n\nYOUR OWN INDEPENDENT VIEW (written before reading the specialist):\n${blind}\n\nTHE ${plan.title.toUpperCase()}'S ANSWER TO REVIEW:\n${spec}` }];
           while (seniorMsgs.length && seniorMsgs[0].role !== 'user') seniorMsgs.shift();
           const senior = await callModel({ key, model: 'claude-fable-5-1', system: [...base, { type: 'text', text: SENIOR(plan.specialty, plan.title) }], messages: seniorMsgs, max_tokens: L.m + 1500,
             onText: (t) => send({ type: 'naheed_delta', stage: 'senior', text: t }), onWeb: (u, t) => send({ type: 'naheed_web', url: u, title: t }),
             onSearch: () => send({ type: 'naheed_status', text: 'The senior doctor is checking current guidance…' }) });
-          stored = `%%SPECIALIST:${plan.specialty}%%\n${spec}\n%%SENIOR%%\n${senior}`;
+          stored = `%%SPECIALIST:${plan.specialty}%%\n${spec}\n%%BLIND%%\n${blind}\n%%SENIOR%%\n${senior}`;
           finalText = finalOf(stored);
         }
         // Save the turn to the shared history, notify tagged people, then learn from it.
