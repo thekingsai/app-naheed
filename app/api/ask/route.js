@@ -79,20 +79,47 @@ async function callModel({ key, model, system, messages, max_tokens, web = true,
   return text;
 }
 
+// Backup when the sorting call fails: obvious medical words pick the field.
+const FIELDS = [
+  [/\b(neck|spine|spinal|cervical|radicul|pinched|nerve|mri|sciatica|back pain|numb)/i, 'Pain medicine and spine', 'spine and pain specialist'],
+  [/\b(esr|crp|rheumat|arthritis|\bra\b|truxima|rituximab|vectra|methotrexate|joint)/i, 'Rheumatology', 'rheumatologist'],
+  [/\b(heart|cardi|echo|ejection|bnp|blood pressure|sglt2|chest pain|valve)/i, 'Cardiology', 'cardiologist'],
+  [/\b(lung|pulmon|cough|asthma|bronch|pneumonia|breath|ct chest|pseudomonas)/i, 'Pulmonology', 'pulmonologist'],
+  [/\b(bone|osteopor|dexa|prolia|fracture|t-score)/i, 'Endocrinology and bone health', 'endocrinologist'],
+  [/\b(thyroid|tsh|nodule|a1c|diabet|sugar|cholesterol|ldl|statin)/i, 'Endocrinology', 'endocrinologist'],
+  [/\b(kidney|egfr|creatinine|renal)/i, 'Nephrology', 'nephrologist'],
+  [/\b(breast|mammo|nipple)/i, 'Breast health', 'breast specialist'],
+  [/\b(celebrex|ibuprofen|aspirin|medicine|medication|drug|dose|side effect|tylenol|nsaid)/i, 'Clinical pharmacology', 'clinical pharmacologist'],
+  [/\b(hemoglobin|anemi|mch|iron|ferritin|b12|platelet)/i, 'Hematology', 'hematologist'],
+];
+const WANTS_TWO = /\bboth\b[^.?!]{0,24}\bdoctors?\b|\b(two|2)\b[^.?!]{0,12}\bdoctors?\b|\bspecialists?\b|second opinion|\breview\b/i;
+function guess(text) { for (const [re, sp, title] of FIELDS) if (re.test(text)) return { specialty: sp, title }; return null; }
+
 async function route(key, question, past) {
+  let plan = { two: false };
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-haiku-5-5', max_tokens: 200, system: ROUTER, messages: [{ role: 'user', content: `${past ? `EARLIER CONVERSATION (for context):\n${past}\n\n` : ''}QUESTION TO ROUTE:\n${question.slice(0, 2000)}` }] }),
+      body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 200, system: ROUTER, messages: [{ role: 'user', content: `${past ? `EARLIER CONVERSATION (for context):\n${past}\n\n` : ''}QUESTION TO ROUTE:\n${question.slice(0, 2000)}` }] }),
     });
-    if (!r.ok) return { two: false };
-    const j = await r.json();
-    const t = (j.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
-    const m = t.match(/\{[\s\S]*\}/);
-    const a = m ? JSON.parse(m[0]) : {};
-    return { two: !!a.two && !!a.specialty, specialty: String(a.specialty || '').slice(0, 60), title: String(a.title || 'specialist').slice(0, 60) };
-  } catch { return { two: false }; }
+    if (!r.ok) { console.error('[ask] router http', r.status, (await r.text()).slice(0, 200)); plan.failed = true; }
+    else {
+      const j = await r.json();
+      const t = (j.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
+      const m = t.match(/\{[\s\S]*\}/);
+      const a = m ? JSON.parse(m[0]) : {};
+      plan = { two: !!a.two && !!a.specialty, specialty: String(a.specialty || '').slice(0, 60), title: String(a.title || 'specialist').slice(0, 60) };
+    }
+  } catch (e) { console.error('[ask] router error', e?.message); plan.failed = true; }
+  // Asking for both doctors always gets both; a failed sorting call falls back to obvious medical words.
+  if (!plan.two && (WANTS_TWO.test(question) || plan.failed)) {
+    const g = guess(question) || guess(past || '');
+    if (g && (WANTS_TWO.test(question) || plan.failed)) plan = { two: true, ...g };
+    else if (WANTS_TWO.test(question)) plan = { two: true, specialty: 'General internal medicine', title: 'internist' };
+  }
+  console.log('[ask] plan', JSON.stringify({ two: plan.two, specialty: plan.specialty || '', failed: !!plan.failed }));
+  return plan;
 }
 
 export async function POST(req) {
