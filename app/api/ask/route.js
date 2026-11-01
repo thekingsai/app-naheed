@@ -1,4 +1,4 @@
-import { getRole } from '@/lib/session';
+import { getRole, getWho } from '@/lib/session';
 import { readEncrypted, readPlain } from '@/lib/vault';
 import { db } from '@/lib/db';
 import { json, deny } from '@/lib/http';
@@ -22,6 +22,7 @@ const MODES = {
 
 export async function POST(req) {
   if ((await getRole()) !== 'family') return deny();
+  const who = await getWho();
   const key = process.env.ANTHROPIC_API_KEY || req.headers.get('x-anthropic-key') || '';
   if (!key) return json({ error: { message: 'Ask AI needs an API key. Add it in Settings, or add ANTHROPIC_API_KEY to the server.' } }, 428);
 
@@ -34,7 +35,7 @@ export async function POST(req) {
   let notes = [], chats = [];
   try { [notes, chats] = await Promise.all([db('notes_list', {}), db('chat_list', { limit: 30 })]); } catch {}
 
-  const rules = readPlain('system-prompt.md').toString().replace('{{TODAY}}', today).replace('{{ASKER}}', 'a family member (Imran or his brother)');
+  const rules = readPlain('system-prompt.md').toString().replace('{{TODAY}}', today).replace('{{ASKER}}', who ? `${who}, one of Naheed's sons` : 'a family member (Imran or his brother Salman)');
   const record = readEncrypted('ask-context.txt.enc').toString();
   const msgs = [
     ...history.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-12)
@@ -85,7 +86,7 @@ export async function POST(req) {
         // Save the turn to the shared history, then learn from it.
         let userId = null;
         try {
-          userId = (await db('chat_add', { role: 'user', content: question, asker: 'Family' })).id;
+          userId = (await db('chat_add', { role: 'user', content: question, asker: who || 'Family' })).id;
           await db('chat_add', { role: 'assistant', content: answer || '(no answer)', model, asker: 'Assistant' });
         } catch {}
         let result = [];
