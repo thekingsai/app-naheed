@@ -3,7 +3,7 @@
 Private family health app for Naheed Saif, served at naheed.thekings.ai.
 
 ## How it works
-- **Sign-in:** one password box, one password per person. Imran's and Salman's passwords open the full app and label their Ask AI questions with their name; Naheed's password opens her simple view only. Sessions are signed cookies (30 days). Ten wrong tries in 15 minutes locks that connection out.
+- **Sign-in:** one password box, one password per person. Imran's and Salman's passwords open the full app and label their Ask AI questions with their name; Naheed's password opens her simple view only. Sessions are signed cookies that renew on every visit, so people stay signed in until they sign out. Ten wrong tries in 15 minutes locks that connection out.
 - **Data:** `data/` holds the app pages, the Ask AI record and every original report PDF, all encrypted (AES-256-GCM). The key lives only in the server's `DATA_KEY` setting.
 - **Database:** chats, notes learned from chats and family uploads are stored in the `naheed` schema of the health database, reachable only through the `naheed_api` function with the server secret.
 - **Ask AI:** `app/api/ask` sends the rules, the full record and the family notes to the model, streams the answer back, saves the turn to the shared history and extracts new family notes (`lib/learn.js`).
