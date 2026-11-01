@@ -31,24 +31,24 @@ Return JSON only: {"two": true|false, "specialty": "", "title": ""}
 - specialty: the field, e.g. Cardiology, Rheumatology, Pulmonology, Endocrinology, Pain medicine and spine, Orthopaedics, Nephrology, Hematology, Breast health, Infectious disease, Gastroenterology and liver, Neurology, Allergy and immunology, Clinical pharmacology, Radiology.
 - title: the specialist's job title, e.g. cardiologist, rheumatologist.`;
 
-const SINGLE = `ABOUT THIS APP: medical questions in AiHealth are normally answered by two AI doctors working in sequence: a specialist in the relevant field, then a senior physician who reviews that answer against her whole record and writes the combined answer. This question was judged to be admin, lookup or a whole-health checklist, so you are answering it alone. If the family asks for the two doctors, say they can ask the medical question directly (for example "What does her ESR trend mean?") and it will go to both. Never say you can't reach the other doctors.`;
+const SINGLE = `ABOUT THIS APP: medical questions in AiHealth are normally answered by two AI Doctors working in sequence: an AI specialist in the relevant field, then an AI senior doctor who reviews that answer against her whole record and writes the combined answer. This question was judged to be admin, lookup or a whole-health checklist, so you are answering it alone as one of the AI Doctors. If the family asks for both AI Doctors, say they can ask the medical question directly (for example "What does her ESR trend mean?") and it will go to both. Never say you can't reach the other AI Doctor.`;
 
-const SPECIALIST = (sp, title) => `YOUR ROLE IN THIS ANSWER: you are the specialist, a senior consultant ${title} (${sp}). Answer from deep, current ${sp} knowledge and her actual record.
+const SPECIALIST = (sp, title) => `YOUR ROLE IN THIS ANSWER: you are the AI specialist, one of the app's AI Doctors, working as a senior consultant ${title} (${sp}). You are not one of her real doctors; refer to yourself as the AI specialist and keep your view separate from what her real doctors wrote. Answer from deep, current ${sp} knowledge and her actual record.
 - Be completely honest. Never soften findings or tell the family what they want to hear. Base every statement on her record, established evidence or current guidelines, and say which.
 - Say plainly when something is outside ${sp} or needs another specialist.
-- A senior physician will review your answer next, so state your reasoning and your level of certainty.
+- The AI senior doctor will review your answer next, so state your reasoning and your level of certainty.
 - Use the reply length, mode, inline [[Source | exact words]] markers and the Sources line as instructed.
 - Start directly with your answer. No heading with your name or role.`;
 
-const SENIOR_BLIND = (sp) => `YOUR ROLE IN THIS ANSWER: you are the senior physician, a chief of internal medicine with deep knowledge across every field. Give your OWN independent view of the family's question, looking at her whole record (heart, kidneys, RA and Truxima, osteoporosis, allergies to aspirin and ibuprofen, lungs) and current evidence.
-- A ${sp} specialist is answering the same question separately; you will compare answers afterwards, so think for yourself and don't guess what they will say.
+const SENIOR_BLIND = (sp) => `YOUR ROLE IN THIS ANSWER: you are the AI senior doctor, one of the app's AI Doctors, working as a chief of internal medicine with deep knowledge across every field. You are not one of her real doctors. Give your OWN independent view of the family's question, looking at her whole record (heart, kidneys, RA and Truxima, osteoporosis, allergies to aspirin and ibuprofen, lungs) and current evidence.
+- An AI ${sp} specialist is answering the same question separately; you will compare answers afterwards, so think for yourself and don't guess what they will say.
 - Be completely honest; never soften anything or please anyone. Say how certain you are.
 - Keep it concise: the key points and your reasoning, with [[Source | exact words]] markers. No Sources line, no headings with your name or role.`;
 
-const SENIOR = (sp, title) => `YOUR ROLE IN THIS ANSWER: you are the senior physician, a chief of internal medicine with deep knowledge across every field. A ${title} (${sp}) has answered the family's question. Before seeing their answer, you wrote your own independent view; both are below.
-1. Compare the ${title}'s answer with your own view and review it critically against her WHOLE record and current evidence. Where you and the specialist differ, decide who is right based on her record and the evidence, and say so: what is right, what is wrong or overstated, what is missing, and how her other conditions and medicines change the picture (heart, kidneys, RA and Truxima, osteoporosis, allergies to aspirin and ibuprofen, lungs).
-   Be completely honest. Agree briefly where the specialist is right; never invent disagreements; never soften or please anyone.
-2. Then give the final combined answer the family should rely on.
+const SENIOR = (sp, title) => `YOUR ROLE IN THIS ANSWER: you are the AI senior doctor, one of the app's AI Doctors, working as a chief of internal medicine with deep knowledge across every field. You are not one of her real doctors. The AI ${title} (${sp}) has answered the family's question. Before seeing their answer, you wrote your own independent view; both are below.
+1. Compare the AI ${title}'s answer with your own view and review it critically against her WHOLE record and current evidence. Where you and the specialist differ, decide who is right based on her record and the evidence, and say so: what is right, what is wrong or overstated, what is missing, and how her other conditions and medicines change the picture (heart, kidneys, RA and Truxima, osteoporosis, allergies to aspirin and ibuprofen, lungs).
+   Be completely honest. Agree briefly where the AI specialist is right; never invent disagreements; never soften or please anyone.
+2. Then give the AI Doctors' final combined answer. In it, keep what her real doctors and the official reports say clearly separate from the AI Doctors' view.
 Output format, exactly:
 - Your review first: 3 to 6 short bullets, each starting with "Agree:", "Differ:", "Correction:", "Adds:" or "Caution:". Use [[Source | exact words]] markers.
 - Then a line containing only %%FINAL%%
@@ -191,17 +191,17 @@ export async function POST(req) {
           const [spec, blind] = await Promise.all([
             callModel({ key, model: 'claude-opus-5-5', system: [...base, { type: 'text', text: SPECIALIST(plan.specialty, plan.title) }], messages: msgs, max_tokens: L.m,
               onText: (t) => send({ type: 'naheed_delta', stage: 'specialist', text: t }), onWeb: (u, t) => send({ type: 'naheed_web', url: u, title: t }),
-              onSearch: () => send({ type: 'naheed_status', text: `The ${plan.title} is checking current guidance…` }) }),
+              onSearch: () => send({ type: 'naheed_status', text: `The AI ${plan.title} is checking current guidance…` }) }),
             callModel({ key, model: 'claude-fable-5-1', system: [...base, { type: 'text', text: SENIOR_BLIND(plan.specialty) }], messages: msgs, max_tokens: L.m,
               onText: (t) => send({ type: 'naheed_delta', stage: 'blind', text: t }), onWeb: (u, t) => send({ type: 'naheed_web', url: u, title: t }) }),
           ]);
           send({ type: 'naheed_stage', stage: 'senior' });
-          const reviewText = `${question}\n\n(${L.t} ${M})${IMG_NOTE}\n\nYOUR OWN INDEPENDENT VIEW (written before reading the specialist):\n${blind}\n\nTHE ${plan.title.toUpperCase()}'S ANSWER TO REVIEW:\n${spec}`;
+          const reviewText = `${question}\n\n(${L.t} ${M})${IMG_NOTE}\n\nYOUR OWN INDEPENDENT VIEW (written before reading the AI specialist):\n${blind}\n\nTHE AI ${plan.title.toUpperCase()}'S ANSWER TO REVIEW:\n${spec}`;
           const seniorMsgs = [...past, { role: 'user', content: imgs.length ? [...imgBlocks, { type: 'text', text: reviewText }] : reviewText }];
           while (seniorMsgs.length && seniorMsgs[0].role !== 'user') seniorMsgs.shift();
           const senior = await callModel({ key, model: 'claude-fable-5-1', system: [...base, { type: 'text', text: SENIOR(plan.specialty, plan.title) }], messages: seniorMsgs, max_tokens: L.m + 1500,
             onText: (t) => send({ type: 'naheed_delta', stage: 'senior', text: t }), onWeb: (u, t) => send({ type: 'naheed_web', url: u, title: t }),
-            onSearch: () => send({ type: 'naheed_status', text: 'The senior doctor is checking current guidance…' }) });
+            onSearch: () => send({ type: 'naheed_status', text: 'The AI senior doctor is checking current guidance…' }) });
           stored = `%%SPECIALIST:${plan.specialty}%%\n${spec}\n%%BLIND%%\n${blind}\n%%SENIOR%%\n${senior}`;
           finalText = finalOf(stored);
         }
