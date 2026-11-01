@@ -3,6 +3,7 @@ import { readEncrypted, readPlain } from '@/lib/vault';
 import { db } from '@/lib/db';
 import { json, deny } from '@/lib/http';
 import { extractNotes, notesBlock } from '@/lib/learn';
+import { uploadsBlock } from '@/lib/reader';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -32,8 +33,8 @@ export async function POST(req) {
   const L = LENS[len] || LENS.medium;
   const today = new Date().toDateString();
 
-  let notes = [], chats = [];
-  try { [notes, chats] = await Promise.all([db('notes_list', {}), db('chat_list', { limit: 30 })]); } catch {}
+  let notes = [], chats = [], uploads = [];
+  try { [notes, chats, uploads] = await Promise.all([db('notes_list', {}), db('chat_list', { limit: 30 }), db('upload_list', {})]); } catch {}
 
   const rules = readPlain('system-prompt.md').toString().replace('{{TODAY}}', today).replace('{{ASKER}}', who ? `${who}, one of Naheed's sons` : 'a family member (Imran or his brother Salman)');
   const record = readEncrypted('ask-context.txt.enc').toString();
@@ -54,7 +55,7 @@ export async function POST(req) {
       system: [
         { type: 'text', text: rules },
         { type: 'text', text: "NAHEED'S COMPLETE RECORD:\n" + record, cache_control: { type: 'ephemeral', ttl: '1h' } },
-        { type: 'text', text: notesBlock(notes, chats) },
+        { type: 'text', text: notesBlock(notes, chats) + '\n\n' + uploadsBlock(uploads) },
       ],
       messages: msgs,
     }),
@@ -92,7 +93,7 @@ export async function POST(req) {
         let result = [];
         try {
           const actions = await extractNotes({ key, notes, question, answer, today });
-          if (actions.length) result = await db('notes_apply', { actions: actions.map((a) => ({ ...a, source_message: userId || '', by: 'Family' })) });
+          if (actions.length) result = await db('notes_apply', { actions: actions.map((a) => ({ ...a, source_message: userId || '', by: who || 'Family' })) });
         } catch {}
         const ev = {
           type: 'naheed_notes',
