@@ -551,6 +551,10 @@ body[data-tab=ask] .page{max-width:1440px}
 .nv[data-tab=ask][aria-selected="true"] .pill .ico{stroke:#fff}
 .nv[aria-selected="true"]{color:var(--ink);font-weight:600}
 @media(max-width:760px){.shell{grid-template-columns:1fr}.rail{top:auto;height:auto;margin:0;border-radius:22px 22px 0 0;gap:0;padding:8px 2px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -2px 14px rgba(60,64,67,.12)}.rbrand{display:none}.content{padding-left:16px}}
+.chat .q{scroll-margin-top:96px}
+.chat .a.live{min-height:calc(100dvh - 300px);align-content:start}
+.chat .a.live .bub{align-content:start}
+@media(max-width:760px){.chat .q{scroll-margin-top:84px}.chat .a.live{min-height:calc(100dvh - 330px)}}
 </style><style>.lg{min-height:100vh;display:grid;place-items:center;padding:24px}.lg .card{width:100%;max-width:380px;display:grid;gap:14px;padding:28px}.lg h1{font-size:26px}.lg input{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}.lg .err{color:var(--bad);font-size:14px;min-height:20px}</style></head><body>
 <div class="lg"><form class="card" onsubmit="go(event)"><div style="display:flex;align-items:center;gap:10px"><span class="logo-sm" style="width:40px;height:40px;border-radius:12px;background:var(--pri);color:var(--on-pri);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></span><h1>Naheed Health</h1></div>
 <p class="muted">Private family app. Enter your password.</p>
