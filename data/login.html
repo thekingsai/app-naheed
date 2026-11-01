@@ -585,6 +585,28 @@ html[data-cite=off] sup.cite,html[data-cite=off] .bub .src{display:none}
 .topbar.askhd{margin-left:-14px;border-left-width:0;border-radius:0 22px 22px 0;top:10px;padding-left:18px}
 .topbar.askhd::before{content:"";position:absolute;left:0;bottom:-23.5px;width:22px;height:22px;background:radial-gradient(circle at 100% 100%,transparent 21.5px,color-mix(in srgb,var(--pri-c) 85%,var(--card)) 22px);pointer-events:none}
 }
+
+/* fluid colours: no panels behind the menu and header */
+.eyebrow:empty{display:none}
+.rail{background:transparent;box-shadow:none}
+.rbrand{border-bottom:0}
+.topbar.band,.topbar.askhd{background:transparent!important;border:0;box-shadow:none;animation:none;border-radius:16px}
+.topbar.band::before,.topbar.band::after,.topbar.askhd::before{display:none!important}
+.topbar.band.shrunk,.topbar.askhd.shrunk{background:color-mix(in srgb,var(--bg) 90%,transparent)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 1px 0 var(--line)}
+.topbar .askopts .aoc,.topbar .askopts:not(.mini) .lenrow{background:var(--card)}
+.topbar.band .icon-btn,.topbar.band .sync{background:var(--card)}
+body[data-tab=focus]{--tac:#ea580c}body[data-tab=insights]{--tac:#7c3aed}body[data-tab=results]{--tac:#0d9488}body[data-tab=profile]{--tac:#db2777}body[data-tab=records]{--tac:#16a34a}
+.topbar.band .pg-ico{background:color-mix(in srgb,var(--tac,var(--pri)) 14%,var(--card));color:var(--tac,var(--pri));box-shadow:none}
+body[data-tab=focus] .page{padding-bottom:72px}
+@media(min-width:761px){
+.rail{margin:0;border-radius:0;top:0;height:100vh;padding:18px 0}
+.content{padding:12px 28px 48px 6px}
+.topbar.band,.topbar.askhd{margin-left:0;top:8px;padding:8px 10px}
+}
+@media(max-width:760px){
+.rail{background:color-mix(in srgb,var(--bg) 92%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 -1px 0 var(--line);border-radius:0}
+.topbar.band,.topbar.askhd{padding:6px 4px}
+}
 </style><style>.lg{min-height:100vh;display:grid;place-items:center;padding:24px}.lg .card{width:100%;max-width:380px;display:grid;gap:14px;padding:28px}.lg h1{font-size:26px}.lg input{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}.lg .err{color:var(--bad);font-size:14px;min-height:20px}</style></head><body>
 <div class="lg"><form class="card" onsubmit="go(event)"><div style="display:flex;align-items:center;gap:10px"><span class="logo-sm" style="width:40px;height:40px;border-radius:12px;background:var(--pri);color:var(--on-pri);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></span><h1>Naheed Health</h1></div>
 <p class="muted">Private family app. Enter your password.</p>
