@@ -355,6 +355,18 @@ body[data-tab=ask] .content{padding-bottom:12px}
 .op .forher{background:var(--c2);border-radius:10px;padding:8px 10px;margin-top:6px}
 .op .forher span{font-weight:600;color:var(--ink)}
 @media(max-width:760px){.fh-t{font-size:23px}}
+.list:has(>.rrow){container-type:inline-size}
+button.row.rrow{display:grid;grid-template-columns:40px minmax(0,1fr) 72px 92px 124px;gap:12px;align-items:center;text-align:left}
+.rrow .tx{display:grid;min-width:0}
+.rrow .tx .nm{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .tx .desc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;color:var(--muted)}
+.rrow .spark{justify-self:center}
+.rrow .val{text-align:right;display:grid;justify-items:end}
+.rrow .val span{white-space:nowrap}
+.rrow .stc{display:flex;justify-content:flex-end}
+.rrow .stc .chip{white-space:normal;text-align:center;line-height:1.25;max-width:124px}
+@container (max-width:520px){button.row.rrow{grid-template-columns:36px minmax(0,1fr) 84px 108px;gap:10px}.rrow .spark{display:none}}
+@container (max-width:380px){button.row.rrow{grid-template-columns:36px minmax(0,1fr) 84px}.rrow .stc{display:none}}
 .askfab{position:fixed;right:24px;bottom:24px;z-index:16;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:18px;padding:14px 20px 14px 16px;font:inherit;font-weight:600;font-size:15.5px;color:#fff;background:linear-gradient(110deg,#3b82f6,#8b5cf6,#ec4899);box-shadow:0 6px 18px rgba(99,102,241,.35);cursor:pointer}
 .askfab .ico{width:20px;height:20px;stroke:#fff}
 .askfab:hover{filter:brightness(1.06)}
