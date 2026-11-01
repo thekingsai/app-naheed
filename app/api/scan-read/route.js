@@ -59,7 +59,8 @@ export async function POST(req) {
 
   const origin = originOf(req);
   const loaded = await Promise.all(s.paths.slice(0, 12).map(async (p) => [p, await readImage(p, origin).catch(() => null)]));
-  const got = loaded.filter(([, b]) => b);
+  // keep the request a sensible size: very large images (mammograms) are capped at about 8 MB in total
+  let total = 0; const got = loaded.filter(([, b]) => b && (total += b.length) <= 8e6);
   if (!got.length) return json({ error: { message: 'The images for this exam could not be loaded.' } }, 500);
   const imgs = got.flatMap(([p, b]) => [{ type: 'text', text: `Image: ${p.split('/').slice(-2).join('/').replace('.jpg', '')}` }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b.toString('base64') } }]);
 

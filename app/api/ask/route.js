@@ -140,7 +140,7 @@ export async function POST(req) {
   if (!reqImgs.length) { const a = autoImages(question); reqImgs = a.paths; autoLabel = a.label; }
   const origin = originOf(req);
   const loaded = await Promise.all(reqImgs.filter((p) => typeof p === 'string' && IMG_PATH.test(p)).slice(0, 12).map(async (p) => [p, await readImage(p, origin).catch(() => null)]));
-  const got = loaded.filter(([, b]) => b), imgs = got.map(([p]) => p);
+  let total = 0; const got = loaded.filter(([, b]) => b && (total += b.length) <= 8e6), imgs = got.map(([p]) => p);
   const imgBlocks = got.flatMap(([p, b]) => [{ type: 'text', text: `Image: ${p.split('/').slice(-2).join('/').replace('.jpg', '')}` }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b.toString('base64') } }]);
   const label = String(imagesLabel || autoLabel || '').slice(0, 160);
   const IMG_NOTE = imgs.length ? `\n\nATTACHED IMAGES: ${imgs.length} reference images from her ${label || 'scan'}, exported from the patient portal as JPEGs (file names give the exam folder, series and slice number: SAG = side view, AX = cross-section, COR = front view; on MRI T2/STIR show fluid and swelling bright, T1 shows anatomy; on CT, LUNG = lung window). You are not her radiologist: describe what you can see carefully, say plainly what cannot be judged from these images (a few slices, no measurements, no full study), never present an image finding as a diagnosis, and say that the radiologist's report is the official reading and takes precedence when it disagrees.` : '';
