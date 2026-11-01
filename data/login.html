@@ -612,6 +612,54 @@ body[data-tab=focus] .page{padding-bottom:72px}
 .ttlrow .ai-badge,.topbar.band.shrunk .ai-badge{background:color-mix(in srgb,var(--pri) 9%,transparent);color:var(--pri);box-shadow:none;animation:none;font-size:10.5px;font-weight:600;letter-spacing:.06em;padding:2px 7px 2px 6px;gap:3px;border:1px solid color-mix(in srgb,var(--pri) 18%,transparent)}
 .ttlrow .ai-badge .ico{stroke:var(--pri);width:11px;height:11px;animation:none}
 .topbar.notrans,.topbar.notrans *{transition:none!important}
+
+/* visit questions */
+.sheet.wide{width:min(800px,calc(100% - 24px))}
+@media(max-width:760px){.sheet.wide{width:100%;max-height:92vh}}
+.qfilters{position:sticky;top:-8px;z-index:2;display:flex;gap:6px;flex-wrap:wrap;padding:8px 0 10px;background:var(--card)}
+.qf{border:1px solid var(--line);background:var(--card);color:var(--ink2);border-radius:999px;padding:6px 12px;font:inherit;font-size:13.5px;font-weight:500;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.qf span{font-size:11.5px;font-weight:700;background:var(--c2);color:var(--muted);border-radius:999px;padding:1px 7px}
+.qf.on{background:var(--pri-c);color:var(--on-pri-c);border-color:transparent}
+.qf.on span{background:var(--card);color:var(--pri)}
+.qv{display:grid;gap:12px;padding:16px 0 20px;border-top:1px solid var(--line)}
+.qv:first-of-type{border-top:0;padding-top:4px}
+.qv-h{display:flex;gap:12px;align-items:flex-start}
+.qv-ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex-shrink:0;background:color-mix(in srgb,var(--ac) 14%,var(--card));color:var(--ac)}
+.qv-ic .ico{width:22px;height:22px}
+.qv-t{display:grid;gap:1px;flex:1;min-width:0}
+.qv-t b{font-size:19px;font-weight:600}
+.qv-t span{font-size:14px;color:var(--ink2)}
+.qv-t em{font-style:normal;color:var(--ac);font-weight:600}
+.qv-t .muted{font-size:13px;color:var(--muted)}
+.qv h4{margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.qv-for{background:color-mix(in srgb,var(--ac) 7%,var(--card));border-radius:14px;padding:12px 14px}
+.qv-for p{margin:0;font-size:15px;line-height:1.5;color:var(--ink)}
+.qv-prep ul.cb{font-size:14.5px}
+.qv-qh{display:flex;justify-content:space-between;align-items:baseline}
+.qv-qh .muted{font-size:13px}
+.qlist{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:q}
+.qlist li.qi{display:grid;grid-template-columns:30px 1fr;gap:10px;padding:12px;border-radius:14px;background:var(--c2);transition:opacity .2s}
+.qlist li.qi.done{opacity:.6}
+.qlist li.qi.done .qq{text-decoration:line-through;text-decoration-color:var(--muted)}
+.qchk{width:26px;height:26px;border-radius:8px;border:2px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer;color:transparent;margin-top:1px;padding:0}
+.qchk .ico{width:16px;height:16px}
+.qchk[aria-checked=true]{background:var(--good);border-color:var(--good);color:#fff}
+.qchk[aria-checked=true] .ico{stroke:#fff}
+.qb{display:grid;gap:5px;min-width:0}
+.qtop{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qt{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ac)}
+.qq{margin:0;font-size:15.5px;line-height:1.45;color:var(--ink);font-weight:500}
+.qw{margin:0;font-size:14px;line-height:1.5;color:var(--ink2)}
+.qr{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.fchip.sm{font-size:12.5px;padding:3px 10px}
+.qacts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--line)}
+.qacts .btn{display:inline-flex;align-items:center;gap:6px}
+.qacts .muted{font-size:13px}
+@media print{body.pqs .shell,body.pqs .scrim,body.pqs .askfab,body.pqs .qfilters,body.pqs .qacts,body.pqs .sheet header .x,body.pqs .qchk{display:none!important}body.pqs .sheet{position:static!important;width:auto!important;max-height:none!important;box-shadow:none!important;animation:none!important}body.pqs .sheet .body{overflow:visible}body.pqs .qlist li.qi{grid-template-columns:1fr;break-inside:avoid}body.pqs .qv{break-inside:auto}}
+@media(max-width:760px){.qfilters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -24px;padding-inline:24px}.qfilters::-webkit-scrollbar{display:none}.qf{white-space:nowrap;flex-shrink:0}}
+#qs-root{min-width:0;display:grid}
+.sheet .body{min-width:0}
+.qv,.qv *{min-width:0}
 </style><style>.lg{min-height:100vh;display:grid;place-items:center;padding:24px}.lg .card{width:100%;max-width:380px;display:grid;gap:14px;padding:28px}.lg h1{font-size:26px}.lg input{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}.lg .err{color:var(--bad);font-size:14px;min-height:20px}</style></head><body>
 <div class="lg"><form class="card" onsubmit="go(event)"><div style="display:flex;align-items:center;gap:10px"><span class="logo-sm" style="width:40px;height:40px;border-radius:12px;background:var(--pri);color:var(--on-pri);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></span><h1>Naheed Health</h1></div>
 <p class="muted">Private family app. Enter your password.</p>
