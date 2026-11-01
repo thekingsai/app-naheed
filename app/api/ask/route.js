@@ -142,12 +142,15 @@ export async function POST(req) {
   let notes = [], chats = [], uploads = [];
   try { [notes, chats, uploads] = await Promise.all([db('notes_list', {}), db('chat_list', { limit: 30 }), db('upload_list', {})]); } catch {}
 
-  const rules = readPlain('system-prompt.md').toString().replace('{{TODAY}}', today).replace('{{ASKER}}', who ? `${who}, one of Naheed's sons` : 'a family member (Imran or his brother Salman)');
+  // Keep everything before her record identical for every question, so the cached record is reused
+  // across days and between Imran and Salman. Today's date and the asker go after the record.
+  const rules = readPlain('system-prompt.md').toString().replace('{{TODAY}}', 'given under CURRENT CONTEXT below').replace('{{ASKER}}', 'given under CURRENT CONTEXT below');
+  const asker = who ? `${who}, one of Naheed's sons` : 'a family member (Imran or his brother Salman)';
   const record = readEncrypted('ask-context.txt.enc').toString();
   const base = [
     { type: 'text', text: rules },
     { type: 'text', text: "NAHEED'S COMPLETE RECORD:\n" + record, cache_control: { type: 'ephemeral', ttl: '1h' } },
-    { type: 'text', text: notesBlock(notes, chats.map((c) => ({ ...c, content: finalOf(c.content) }))) + '\n\n' + uploadsBlock(uploads) },
+    { type: 'text', text: `CURRENT CONTEXT\nToday is ${today}. The person asking is ${asker}.\n\n` + notesBlock(notes, chats.map((c) => ({ ...c, content: finalOf(c.content) }))) + '\n\n' + uploadsBlock(uploads) },
   ];
   const past = history.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-12)
     .map((m) => ({ role: m.role, content: finalOf(m.content).slice(0, 8000) }));
