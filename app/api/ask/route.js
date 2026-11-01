@@ -85,10 +85,13 @@ export async function POST(req) {
           }
         }
         // Save the turn to the shared history, then learn from it.
-        let userId = null;
+        let userId = null, assistantId = null;
         try {
           userId = (await db('chat_add', { role: 'user', content: question, asker: who || 'Family' })).id;
-          await db('chat_add', { role: 'assistant', content: answer || '(no answer)', model, asker: 'Assistant' });
+          assistantId = (await db('chat_add', { role: 'assistant', content: answer || '(no answer)', model, asker: 'Assistant' })).id;
+          // @Imran / @Salman in a question notifies that person.
+          const tagged = [...new Set((question.match(/@(imran|salman)\b/gi) || []).map((t) => t[1].toUpperCase() + t.slice(2).toLowerCase()))].filter((t) => t !== who);
+          for (const to of tagged) { try { await db('mention_add', { message_id: userId, from: who || 'Family', to }); } catch {} }
         } catch {}
         let result = [];
         try {
@@ -100,6 +103,7 @@ export async function POST(req) {
           saved: result.filter((x) => x.op === 'add' && !x.pending),
           pending: result.filter((x) => x.op === 'add' && x.pending),
           corrected: result.filter((x) => x.op === 'correct'),
+          userId, assistantId,
         };
         controller.enqueue(enc.encode(`event: naheed_notes\ndata: ${JSON.stringify(ev)}\n\n`));
       } catch (e) {
