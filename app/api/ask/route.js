@@ -14,12 +14,19 @@ const LENS = {
   detailed: { t: 'Reply length: DETAILED. A thorough answer, up to about 600 words, with short headed sections if helpful, then the Sources line.', m: 6000 },
 };
 
+const MODES = {
+  layman: 'Mode: LAYMAN. Everyday words only, as if explaining to a family member with no medical background. Explain every medical term in plain language, use a simple comparison when it helps, and focus on what it means for her and what to ask or do. Give numbers only with what they mean (for example "67, above the normal top of 40").',
+  doctor: 'Mode: DOCTOR. Write for a physician reviewing her case. Use precise clinical terminology and standard abbreviations (e.g. HFmrEF, LVEF, NT-proBNP, ESR, BI-RADS, TI-RADS, C5–C6 foraminal stenosis). Give exact values with units, reference ranges and dates, trends, pertinent negatives, current medications with doses, relevant history and comorbidities, and guideline-based considerations or differentials where useful. Concise clinical style, like a consult summary. In this mode use the exact clinical names, including heart failure and the breast findings.',
+  hybrid: 'Mode: HYBRID. Start with a plain-English answer anyone in the family can follow, then a short part headed "Clinical detail" with the technical terms, exact values with units, reference ranges and dates a doctor would want.',
+};
+
 export async function POST(req) {
   if ((await getRole()) !== 'family') return deny();
   const key = process.env.ANTHROPIC_API_KEY || req.headers.get('x-anthropic-key') || '';
   if (!key) return json({ error: { message: 'Ask AI needs an API key. Add it in Settings, or add ANTHROPIC_API_KEY to the server.' } }, 428);
 
-  const { question = '', history = [], len = 'medium', model = 'claude-opus-5-5' } = await req.json();
+  const { question = '', history = [], len = 'medium', mode = 'hybrid', model = 'claude-opus-5-5' } = await req.json();
+  const M = MODES[mode] || MODES.hybrid;
   if (typeof question !== 'string' || !question.trim() || question.length > 4000) return json({ error: { message: 'Bad question' } }, 400);
   const L = LENS[len] || LENS.medium;
   const today = new Date().toDateString();
@@ -32,7 +39,7 @@ export async function POST(req) {
   const msgs = [
     ...history.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-12)
       .map((m) => ({ role: m.role, content: m.content.slice(0, 8000) })),
-    { role: 'user', content: `${question}\n\n(${L.t})` },
+    { role: 'user', content: `${question}\n\n(${L.t} ${M})` },
   ];
   while (msgs.length && msgs[0].role !== 'user') msgs.shift();
 
