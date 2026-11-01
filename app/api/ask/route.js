@@ -1,5 +1,5 @@
 import { getRole, getWho } from '@/lib/session';
-import { readEncrypted, readPlain } from '@/lib/vault';
+import { readEncrypted, readPlain, docFile, exists } from '@/lib/vault';
 import { db } from '@/lib/db';
 import { json, deny } from '@/lib/http';
 import { extractNotes, notesBlock } from '@/lib/learn';
@@ -133,7 +133,12 @@ export async function POST(req) {
   const key = process.env.ANTHROPIC_API_KEY || req.headers.get('x-anthropic-key') || '';
   if (!key) return json({ error: { message: 'Ask AI needs an API key. Add it in Settings, or add ANTHROPIC_API_KEY to the server.' } }, 428);
 
-  const { question = '', history = [], len = 'medium', mode = 'hybrid', model = 'claude-opus-5-5' } = await req.json();
+  const { question = '', history = [], len = 'medium', mode = 'hybrid', model = 'claude-opus-5-5', images = [], imagesLabel = '' } = await req.json();
+  // Scan images attached from a scan page: only her stored RadNet images, at most 12.
+  const imgs = (Array.isArray(images) ? images : []).filter((p) => typeof p === 'string' && /^radnet\/images\/[\w\-.]+\/[\w\-.]+\.jpg$/.test(p) && exists(docFile(p))).slice(0, 12);
+  const imgBlocks = imgs.flatMap((p) => [{ type: 'text', text: `Image: ${p.split('/').pop().replace('.jpg', '')}` }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: readEncrypted(docFile(p)).toString('base64') } }]);
+  const label = String(imagesLabel || '').slice(0, 120);
+  const IMG_NOTE = imgs.length ? `\n\nATTACHED IMAGES: ${imgs.length} reference images from her ${label || 'scan'}, exported from the patient portal as JPEGs (file names give the series and slice number: SAG = side view, AX = cross-section; T2/STIR show fluid and swelling bright, T1 shows anatomy). You are not her radiologist: describe what you can see carefully, say plainly what cannot be judged from these images (a few slices, no measurements, no full study), never present an image finding as a diagnosis, and say that the radiologist's report is the official reading and takes precedence when it disagrees.` : '';
   const M = MODES[mode === 'doctor' ? 'technical' : mode] || MODES.hybrid;
   if (typeof question !== 'string' || !question.trim() || question.length > 4000) return json({ error: { message: 'Bad question' } }, 400);
   const L = LENS[len] || LENS.medium;
@@ -154,7 +159,8 @@ export async function POST(req) {
   ];
   const past = history.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-12)
     .map((m) => ({ role: m.role, content: finalOf(m.content).slice(0, 8000) }));
-  const ask = { role: 'user', content: `${question}\n\n(${L.t} ${M})` };
+  const askText = `${question}\n\n(${L.t} ${M})${IMG_NOTE}`;
+  const ask = { role: 'user', content: imgs.length ? [...imgBlocks, { type: 'text', text: askText }] : askText };
   const msgs = [...past, ask];
   while (msgs.length && msgs[0].role !== 'user') msgs.shift();
 
@@ -183,7 +189,8 @@ export async function POST(req) {
               onText: (t) => send({ type: 'naheed_delta', stage: 'blind', text: t }), onWeb: (u, t) => send({ type: 'naheed_web', url: u, title: t }) }),
           ]);
           send({ type: 'naheed_stage', stage: 'senior' });
-          const seniorMsgs = [...past, { role: 'user', content: `${question}\n\n(${L.t} ${M})\n\nYOUR OWN INDEPENDENT VIEW (written before reading the specialist):\n${blind}\n\nTHE ${plan.title.toUpperCase()}'S ANSWER TO REVIEW:\n${spec}` }];
+          const reviewText = `${question}\n\n(${L.t} ${M})${IMG_NOTE}\n\nYOUR OWN INDEPENDENT VIEW (written before reading the specialist):\n${blind}\n\nTHE ${plan.title.toUpperCase()}'S ANSWER TO REVIEW:\n${spec}`;
+          const seniorMsgs = [...past, { role: 'user', content: imgs.length ? [...imgBlocks, { type: 'text', text: reviewText }] : reviewText }];
           while (seniorMsgs.length && seniorMsgs[0].role !== 'user') seniorMsgs.shift();
           const senior = await callModel({ key, model: 'claude-fable-5-1', system: [...base, { type: 'text', text: SENIOR(plan.specialty, plan.title) }], messages: seniorMsgs, max_tokens: L.m + 1500,
             onText: (t) => send({ type: 'naheed_delta', stage: 'senior', text: t }), onWeb: (u, t) => send({ type: 'naheed_web', url: u, title: t }),
@@ -194,7 +201,7 @@ export async function POST(req) {
         // Save the turn to the shared history, notify tagged people, then learn from it.
         let userId = null, assistantId = null;
         try {
-          userId = (await db('chat_add', { role: 'user', content: question, asker: who || 'Family' })).id;
+          userId = (await db('chat_add', { role: 'user', content: question + (imgs.length ? `\n\n[Attached: ${imgs.length} images · ${label || 'scan'}]` : ''), asker: who || 'Family' })).id;
           assistantId = (await db('chat_add', { role: 'assistant', content: stored || '(no answer)', model: plan.two ? 'claude-opus-5-5+claude-fable-5-1' : model, asker: 'Assistant' })).id;
           const tagged = [...new Set((question.match(/@(imran|salman)\b/gi) || []).map((t) => t[1].toUpperCase() + t.slice(2).toLowerCase()))].filter((t) => t !== who);
           for (const to of tagged) { try { await db('mention_add', { message_id: userId, from: who || 'Family', to }); } catch {} }
