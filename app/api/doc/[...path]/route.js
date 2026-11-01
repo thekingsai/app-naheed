@@ -1,5 +1,5 @@
 import { getRole } from '@/lib/session';
-import { readEncrypted, docFile, exists } from '@/lib/vault';
+import { readEncrypted, docFile, exists, readImage, originOf, IMG_PATH } from '@/lib/vault';
 import { deny } from '@/lib/http';
 
 export const runtime = 'nodejs';
@@ -7,14 +7,15 @@ export const runtime = 'nodejs';
 export async function GET(req, { params }) {
   if ((await getRole()) !== 'family') return deny();
   const rel = (await params).path.join('/');
-  const f = docFile(rel);
-  const isPdf = /^[\w\-./]+\.pdf$/.test(rel), isImg = /^radnet\/images\/[\w\-.]+\/[\w\-.]+\.jpg$/.test(rel);
-  if ((!isPdf && !isImg) || rel.includes('..') || !exists(f)) return new Response('Not found', { status: 404 });
   const name = rel.split('/').pop();
-  return new Response(readEncrypted(f), { headers: {
-    'content-type': isPdf ? 'application/pdf' : 'image/jpeg',
-    'content-disposition': `inline; filename="${name}"`,
+  if (rel.includes('..')) return new Response('Not found', { status: 404 });
+  if (IMG_PATH.test(rel)) {
+    const img = await readImage(rel, originOf(req));
+    if (!img) return new Response('Not found', { status: 404 });
     // scan images never change, so the browser can keep them while flipping through slices
-    'cache-control': isPdf ? 'private, no-store' : 'private, max-age=86400',
-  } });
+    return new Response(img, { headers: { 'content-type': 'image/jpeg', 'content-disposition': `inline; filename="${name}"`, 'cache-control': 'private, max-age=604800, immutable' } });
+  }
+  const f = docFile(rel);
+  if (!/^[\w\-./]+\.pdf$/.test(rel) || !exists(f)) return new Response('Not found', { status: 404 });
+  return new Response(readEncrypted(f), { headers: { 'content-type': 'application/pdf', 'content-disposition': `inline; filename="${name}"`, 'cache-control': 'private, no-store' } });
 }

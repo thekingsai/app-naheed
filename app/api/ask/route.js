@@ -1,11 +1,11 @@
 import { getRole, getWho } from '@/lib/session';
-import { readEncrypted, readPlain, docFile, exists } from '@/lib/vault';
+import { readEncrypted, readPlain, readImage, originOf, IMG_PATH } from '@/lib/vault';
 import { db } from '@/lib/db';
 import { json, deny } from '@/lib/http';
 import { extractNotes, notesBlock } from '@/lib/learn';
 import { uploadsBlock } from '@/lib/reader';
 import { finalOf } from '@/lib/answers';
-import { autoImages, IMAGES_KNOWN } from '@/lib/scanimages';
+import { autoImages, imagesKnown, readsBlock } from '@/lib/scanimages';
 
 export const runtime = 'nodejs';
 export const maxDuration = 600;
@@ -138,17 +138,19 @@ export async function POST(req) {
   // Scan images attached from a scan page: only her stored RadNet images, at most 12.
   let reqImgs = Array.isArray(images) ? images : [], autoLabel = '';
   if (!reqImgs.length) { const a = autoImages(question); reqImgs = a.paths; autoLabel = a.label; }
-  const imgs = reqImgs.filter((p) => typeof p === 'string' && /^radnet\/images\/[\w\-.]+\/[\w\-.]+\.jpg$/.test(p) && exists(docFile(p))).slice(0, 12);
-  const imgBlocks = imgs.flatMap((p) => [{ type: 'text', text: `Image: ${p.split('/').pop().replace('.jpg', '')}` }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: readEncrypted(docFile(p)).toString('base64') } }]);
+  const origin = originOf(req);
+  const loaded = await Promise.all(reqImgs.filter((p) => typeof p === 'string' && IMG_PATH.test(p)).slice(0, 12).map(async (p) => [p, await readImage(p, origin).catch(() => null)]));
+  const got = loaded.filter(([, b]) => b), imgs = got.map(([p]) => p);
+  const imgBlocks = got.flatMap(([p, b]) => [{ type: 'text', text: `Image: ${p.split('/').slice(-2).join('/').replace('.jpg', '')}` }, { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b.toString('base64') } }]);
   const label = String(imagesLabel || autoLabel || '').slice(0, 160);
-  const IMG_NOTE = imgs.length ? `\n\nATTACHED IMAGES: ${imgs.length} reference images from her ${label || 'scan'}, exported from the patient portal as JPEGs (file names give the series and slice number: SAG = side view, AX = cross-section; T2/STIR show fluid and swelling bright, T1 shows anatomy). You are not her radiologist: describe what you can see carefully, say plainly what cannot be judged from these images (a few slices, no measurements, no full study), never present an image finding as a diagnosis, and say that the radiologist's report is the official reading and takes precedence when it disagrees.` : '';
+  const IMG_NOTE = imgs.length ? `\n\nATTACHED IMAGES: ${imgs.length} reference images from her ${label || 'scan'}, exported from the patient portal as JPEGs (file names give the exam folder, series and slice number: SAG = side view, AX = cross-section, COR = front view; on MRI T2/STIR show fluid and swelling bright, T1 shows anatomy; on CT, LUNG = lung window). You are not her radiologist: describe what you can see carefully, say plainly what cannot be judged from these images (a few slices, no measurements, no full study), never present an image finding as a diagnosis, and say that the radiologist's report is the official reading and takes precedence when it disagrees.` : '';
   const M = MODES[mode === 'doctor' ? 'technical' : mode] || MODES.hybrid;
   if (typeof question !== 'string' || !question.trim() || question.length > 4000) return json({ error: { message: 'Bad question' } }, 400);
   const L = LENS[len] || LENS.medium;
   const today = new Date().toDateString();
 
-  let notes = [], chats = [], uploads = [];
-  try { [notes, chats, uploads] = await Promise.all([db('notes_list', {}), db('chat_list', { limit: 30 }), db('upload_list', {})]); } catch {}
+  let notes = [], chats = [], uploads = [], reads = [];
+  try { [notes, chats, uploads, reads] = await Promise.all([db('notes_list', {}), db('chat_list', { limit: 30 }), db('upload_list', {}), db('scanread_list', {}).catch(() => [])]); } catch {}
 
   // Keep everything before her record identical for every question, so the cached record is reused
   // across days and between Imran and Salman. Today's date and the asker go after the record.
@@ -156,8 +158,10 @@ export async function POST(req) {
   const asker = who ? `${who}, one of Naheed's sons` : 'a family member (Imran or his brother Salman)';
   const record = readEncrypted('ask-context.txt.enc').toString();
   const base = [
-    { type: 'text', text: rules + '\n\n' + IMAGES_KNOWN },
+    { type: 'text', text: rules + '\n\n' + imagesKnown() },
     { type: 'text', text: "NAHEED'S COMPLETE RECORD:\n" + record, cache_control: { type: 'ephemeral', ttl: '1h' } },
+    // the image reviews change rarely, so they get their own cache point after the record
+    { type: 'text', text: readsBlock(reads), cache_control: { type: 'ephemeral', ttl: '1h' } },
     { type: 'text', text: `CURRENT CONTEXT\nToday is ${today}. The person asking is ${asker}.\n\n` + notesBlock(notes, chats.map((c) => ({ ...c, content: finalOf(c.content) }))) + '\n\n' + uploadsBlock(uploads) },
   ];
   const past = history.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-12)
