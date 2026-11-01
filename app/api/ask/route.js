@@ -24,10 +24,13 @@ const MODES = {
 
 const ROUTER = `Decide how a family health app should answer a question about Naheed (72, with rheumatoid arthritis, a heart condition, osteoporosis, asthma and lung changes, a pinched nerve in the neck).
 Return JSON only: {"two": true|false, "specialty": "", "title": ""}
-- two = true when the question needs medical judgment that belongs mainly to ONE specific field (for example her heart, her RA, her lungs, her bones, her neck pain, a medicine's safety, a lab or scan in one area).
-- two = false for admin or lookup questions (dates, appointments, who her doctor is, what a file says), for greetings, and for broad questions that span her whole health (for example "what should I raise at her next visit").
+- two = true for any question that needs medical judgment: what a result, scan, symptom or medicine means, whether something is safe, what to do or ask, how things are trending. If it touches two related fields, still set two = true and pick the field most central to the question.
+- two = true whenever the family asks for both doctors, the specialist, a second opinion or a review, including follow-ups like "I meant both AI doctors"; then take the topic from the earlier conversation.
+- two = false only for admin or lookup questions (dates, appointments, who her doctor is, what a file says), greetings, questions about the app itself, and whole-health checklists like "what should I raise at her next visit".
 - specialty: the field, e.g. Cardiology, Rheumatology, Pulmonology, Endocrinology, Pain medicine and spine, Orthopaedics, Nephrology, Hematology, Breast health, Infectious disease, Gastroenterology and liver, Neurology, Allergy and immunology, Clinical pharmacology, Radiology.
 - title: the specialist's job title, e.g. cardiologist, rheumatologist.`;
+
+const SINGLE = `ABOUT THIS APP: medical questions in AiHealth are normally answered by two AI doctors working in sequence: a specialist in the relevant field, then a senior physician who reviews that answer against her whole record and writes the combined answer. This question was judged to be admin, lookup or a whole-health checklist, so you are answering it alone. If the family asks for the two doctors, say they can ask the medical question directly (for example "What does her ESR trend mean?") and it will go to both. Never say you can't reach the other doctors.`;
 
 const SPECIALIST = (sp, title) => `YOUR ROLE IN THIS ANSWER: you are the specialist, a senior consultant ${title} (${sp}). Answer from deep, current ${sp} knowledge and her actual record.
 - Be completely honest. Never soften findings or tell the family what they want to hear. Base every statement on her record, established evidence or current guidelines, and say which.
@@ -76,12 +79,12 @@ async function callModel({ key, model, system, messages, max_tokens, web = true,
   return text;
 }
 
-async function route(key, question) {
+async function route(key, question, past) {
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-haiku-5-5', max_tokens: 200, system: ROUTER, messages: [{ role: 'user', content: question.slice(0, 2000) }] }),
+      body: JSON.stringify({ model: 'claude-haiku-5-5', max_tokens: 200, system: ROUTER, messages: [{ role: 'user', content: `${past ? `EARLIER CONVERSATION (for context):\n${past}\n\n` : ''}QUESTION TO ROUTE:\n${question.slice(0, 2000)}` }] }),
     });
     if (!r.ok) return { two: false };
     const j = await r.json();
@@ -126,10 +129,11 @@ export async function POST(req) {
       const send = (o) => controller.enqueue(enc.encode(`data: ${JSON.stringify(o)}\n\n`));
       let stored = '', finalText = '';
       try {
-        const plan = await route(key, question);
+        const ctx = past.slice(-4).map((m) => `${m.role === 'user' ? 'Family' : 'Assistant'}: ${m.content.slice(0, 500)}`).join('\n');
+        const plan = await route(key, question, ctx);
         if (!plan.two) {
           send({ type: 'naheed_stage', stage: 'single' });
-          const txt = await callModel({ key, model: MODELS.has(model) ? model : 'claude-opus-5-5', system: base, messages: msgs, max_tokens: L.m,
+          const txt = await callModel({ key, model: MODELS.has(model) ? model : 'claude-opus-5-5', system: [...base, { type: 'text', text: SINGLE }], messages: msgs, max_tokens: L.m,
             onText: (t) => send({ type: 'naheed_delta', stage: 'single', text: t }), onWeb: (u, t) => send({ type: 'naheed_web', url: u, title: t }),
             onSearch: () => send({ type: 'naheed_status', text: 'Checking current medical guidance on the web…' }) });
           stored = txt; finalText = txt;
