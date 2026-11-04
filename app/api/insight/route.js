@@ -59,7 +59,7 @@ export async function GET(req) {
   if (u.searchParams.get('recent')) return json(recentKeys());
   try {
     const list = await db('insight_list', key ? { key, detail: 'true' } : {});
-    const out = list.map((x) => { const it = insightItem(x.key); return { ...x, stale: !!(it && x.data_hash && it.hash !== x.data_hash) }; });
+    const out = list.filter((x) => key || !String(x.key).startsWith('appt:')).map((x) => { const it = insightItem(x.key); return { ...x, stale: !!(it && x.data_hash && it.hash !== x.data_hash) }; });
     return json(key ? out[0] || null : out);
   } catch { return json(key ? null : []); }
 }

@@ -128,6 +128,16 @@ async function route(key, question, past) {
   return plan;
 }
 
+// Appointments the family added or changed in the app (MedStar visits already in her record are listed there).
+function apptBlock(list) {
+  const live = (list || []).filter((a) => !a.deleted);
+  const gone = (list || []).filter((a) => a.deleted && a.visit_key);
+  if (!live.length && !gone.length) return 'APPOINTMENTS ADDED IN THE APP: none.';
+  return 'APPOINTMENTS ADDED OR CHANGED IN THE APP BY THE FAMILY (these override the visit list in her record):\n' +
+    live.map((a) => `- ${a.date}${a.time ? ' ' + a.time : ''} · ${a.kind}${a.place ? ' · ' + a.place : ''}${a.reason ? ' · for: ' + a.reason : ''}${a.mode && a.mode !== 'In person' ? ' · ' + a.mode : ''}${a.notes ? ' · notes: ' + a.notes : ''}${a.visit_key ? ' (edited MedStar visit)' : ''} (by ${a.updated_by || a.created_by})`).join('\n') +
+    (gone.length ? '\nRemoved by the family (cancelled or not happening): ' + gone.map((a) => `${a.kind || a.visit_key} ${a.date}`).join('; ') : '');
+}
+
 export async function POST(req) {
   if ((await getRole()) !== 'family') return deny();
   const who = await getWho();
@@ -149,8 +159,8 @@ export async function POST(req) {
   const L = LENS[len] || LENS.medium;
   const today = new Date().toDateString();
 
-  let notes = [], chats = [], uploads = [], reads = [];
-  try { [notes, chats, uploads, reads] = await Promise.all([db('notes_list', {}), db('chat_list', { limit: 30 }), db('upload_list', {}), db('scanread_list', {}).catch(() => [])]); } catch {}
+  let notes = [], chats = [], uploads = [], reads = [], appts = [];
+  try { [notes, chats, uploads, reads, appts] = await Promise.all([db('notes_list', {}), db('chat_list', { limit: 30 }), db('upload_list', {}), db('scanread_list', {}).catch(() => []), db('appt_list', {}).catch(() => [])]); } catch {}
 
   // Keep everything before her record identical for every question, so the cached record is reused
   // across days and between Imran and Salman. Today's date and the asker go after the record.
@@ -162,7 +172,7 @@ export async function POST(req) {
     { type: 'text', text: "NAHEED'S COMPLETE RECORD:\n" + record, cache_control: { type: 'ephemeral', ttl: '1h' } },
     // the image reviews change rarely, so they get their own cache point after the record
     { type: 'text', text: readsBlock(reads), cache_control: { type: 'ephemeral', ttl: '1h' } },
-    { type: 'text', text: `CURRENT CONTEXT\nToday is ${today}. The person asking is ${asker}.\n\n` + notesBlock(notes, chats.map((c) => ({ ...c, content: finalOf(c.content) }))) + '\n\n' + uploadsBlock(uploads) },
+    { type: 'text', text: `CURRENT CONTEXT\nToday is ${today}. The person asking is ${asker}.\n\n` + notesBlock(notes, chats.map((c) => ({ ...c, content: finalOf(c.content) }))) + '\n\n' + uploadsBlock(uploads) + '\n\n' + apptBlock(appts) },
   ];
   const past = history.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string').slice(-12)
     .map((m) => ({ role: m.role, content: finalOf(m.content).slice(0, 8000) }));
