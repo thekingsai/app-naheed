@@ -1178,8 +1178,81 @@ body[data-tab=focus] .fopts{right:126px}
 .upx-sl{display:block;font-size:13px;font-weight:600;margin:5px 0 4px}
 .upx-step ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:14px;line-height:1.45}
 .upx-admin{margin:2px 2px 0;font-size:12.5px;color:var(--muted)}
+
+/* ===== Colour system (Option 2): one indigo for structure + red/amber/green only for status =====
+   Indigo  = the app itself: icons, headers, links, taps, charts
+   Red     = act now      Amber = keep an eye on it      Green = going well
+   Loaded last so it overrides the older multi-colour rules. */
+:root{
+ --bg:#f4f5fb;--c2:#eef0f8;--c3:#e2e5f1;--line:#e0e3ee;
+ --pri:#4f46e5;--pri-c:#e0e7ff;--on-pri-c:#312e81;--on-pri:#ffffff;
+ --chk:var(--pri);--chk-c:var(--pri-c)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:#111316;--c2:#23262f;--c3:#2e3240;--line:#30343f;
+ --pri:#a5b4fc;--pri-c:#33307a;--on-pri-c:#e0e7ff;--on-pri:#1e1b4b}}
+:root[data-theme="dark"]{
+ --bg:#111316;--c2:#23262f;--c3:#2e3240;--line:#30343f;
+ --pri:#a5b4fc;--pri-c:#33307a;--on-pri-c:#e0e7ff;--on-pri:#1e1b4b}
+/* body-system colours all become the brand indigo; the icon says which system */
+:root,:root[data-theme="dark"]{--m-sugar:var(--pri);--m-kid:var(--pri);--m-heart:var(--pri);--m-blood:var(--pri);--m-bone:var(--pri);--m-thy:var(--pri);--m-liver:var(--pri);--m-vit:var(--pri)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--m-sugar:var(--pri);--m-kid:var(--pri);--m-heart:var(--pri);--m-blood:var(--pri);--m-bone:var(--pri);--m-thy:var(--pri);--m-liver:var(--pri);--m-vit:var(--pri)}}
+
+/* left menu: one accent for every item */
+.nv[data-tab]{--ac:var(--pri)}
+body[data-tab]{--tac:var(--pri)}
+.nv[data-tab=ask][aria-selected="true"]{background:color-mix(in srgb,var(--pri) 13%,var(--bg))}
+.nv[data-tab=ask][aria-selected="true"] .pill{background:transparent;color:var(--pri)}
+.nv[data-tab=ask][aria-selected="true"] .pill .ico{stroke:currentColor}
+
+/* AI marks: solid indigo instead of the rainbow gradient */
+.rlogo,.ihero-ic,.topbar.askhd .pg-ico{background:var(--pri);box-shadow:0 3px 10px color-mix(in srgb,var(--pri) 30%,transparent)}
+.topbar.askhd .pg-ico .ico,.ihero-ic .ico,.rlogo .ico{stroke:var(--on-pri)}
+.ai-badge{background:var(--pri);color:var(--on-pri);animation:none;box-shadow:none}
+.ai-badge .ico{stroke:var(--on-pri);animation:none}
+.askfab{background:var(--pri);color:var(--on-pri);box-shadow:0 6px 18px color-mix(in srgb,var(--pri) 32%,transparent)}
+.askfab .ico{stroke:var(--on-pri)}
+.gb-name,.topbar.askhd h1{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--ink)}
+.glance{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:var(--pri)}
+.coach.ihero{background:var(--card);border:1px solid color-mix(in srgb,var(--pri) 28%,var(--line));box-shadow:none}
+.coach.ihero::before{background:color-mix(in srgb,var(--pri) 5%,transparent)}
+.topbar.band .pg-ico{background:var(--pri-c);color:var(--pri)}
+
+/* people and mentions */
+.tagnote{color:var(--pri);background:var(--pri-c)}
+.tagnote span{background:var(--pri);color:var(--on-pri)}
+.nbadge{background:var(--pri);color:var(--on-pri)}
+.men-i.new .men-t b::before{background:var(--pri)}
+.duo-p.sp .duo-n,.duo-p.sr .duo-n,.duo-p.bl .duo-n{background:var(--pri);color:var(--on-pri)}
+
+/* "Focus" is something to keep an eye on: amber, not a second blue */
+.chip.focus{background:var(--warn-c);color:var(--warn)}
+.ic.focus{background:var(--pri-c);color:var(--pri)}
+/* where a row already carries a status label, its icon goes indigo so status shows once (phones hide the label, so keep the coloured icon there) */
+@media (min-width:601px){
+ .row:has(> .chip.bad,> .chip.warn,> .chip.focus,> .chip.chk) > .ic{background:var(--pri-c);color:var(--pri)}
+}
+
+/* ===== Big screens: use the width instead of leaving half the window empty ===== */
+@media (min-width:1500px){
+ .page,.apphead{max-width:1560px}
+ .page{margin-left:auto;margin-right:auto}
+ [data-panel=today]{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}
+ [data-panel=today]>*{grid-column:1/-1}
+ [data-panel=today]>.todo{grid-column:1}
+ [data-panel=today]>.apt-card{grid-column:2}
+ .vgrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media (min-width:2200px){
+ .page,.apphead{max-width:1800px}
+}
+/* scan and lab tiles: status is in the label, so the icon stays indigo */
+.mt-top:has(> .chip) > .ic{background:var(--pri-c)!important;color:var(--pri)!important}
+/* cards with a status label next to the icon (Insights, Focus): icon stays indigo */
+:not(.row):has(> .chip:is(.bad,.warn,.focus,.chk)) > .ic{background:var(--pri-c);color:var(--pri)}
+/* amber dots read brown at this size; use a clearer amber for the dot only */
+.ti.warn .dot{background:#d98a00}
 </style><style>.lg{min-height:100vh;display:grid;place-items:center;padding:24px}.lg .card{width:100%;max-width:380px;display:grid;gap:14px;padding:28px}.lg h1{font-size:26px}.lg input{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}.lg .err{color:var(--bad);font-size:14px;min-height:20px}</style></head><body>
-<div class="lg"><form class="card" onsubmit="go(event)"><div style="display:flex;align-items:center;gap:10px"><svg viewBox="0 0 64 64" width="40" height="40" aria-hidden="true"><defs><linearGradient id="gbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#gbg)"/><path d="M32 49s-15-8.6-15-20.2C17 23.1 21.1 19 26.2 19c2.6 0 4.6 1.3 5.8 3.2 1.2-1.9 3.2-3.2 5.8-3.2C42.9 19 47 23.1 47 28.8 47 40.4 32 49 32 49z" fill="#fff"/><path d="M20 33h7l2.5-5 4 9 2.5-4h8" fill="none" stroke="#8b5cf6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><h1>AiHealth</h1></div>
+<div class="lg"><form class="card" onsubmit="go(event)"><div style="display:flex;align-items:center;gap:10px"><svg viewBox="0 0 64 64" width="40" height="40" aria-hidden="true"><defs><linearGradient id="gbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#4f46e5"/><stop offset="1" stop-color="#4338ca"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#gbg)"/><path d="M32 49s-15-8.6-15-20.2C17 23.1 21.1 19 26.2 19c2.6 0 4.6 1.3 5.8 3.2 1.2-1.9 3.2-3.2 5.8-3.2C42.9 19 47 23.1 47 28.8 47 40.4 32 49 32 49z" fill="#fff"/><path d="M20 33h7l2.5-5 4 9 2.5-4h8" fill="none" stroke="#4f46e5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><h1>AiHealth</h1></div>
 <p class="muted">Private family app. Enter your password.</p>
 <input id="pw" type="password" autocomplete="current-password" placeholder="Password" autofocus aria-label="Password">
 <button class="btn" type="submit" style="justify-content:center">Sign in</button><div class="err" id="err" role="alert"></div></form></div>
