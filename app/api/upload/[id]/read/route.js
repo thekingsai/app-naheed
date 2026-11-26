@@ -1,7 +1,7 @@
 import { getRole } from '@/lib/session';
 import { db } from '@/lib/db';
 import { json, deny } from '@/lib/http';
-import { readUpload } from '@/lib/reader';
+import { readUpload, autoStatus } from '@/lib/reader';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
@@ -18,6 +18,7 @@ export async function POST(req, { params }) {
   await db('upload_set', { id, status: 'reading', error: '' });
   const r = await readUpload({ key, mime: f.mime, data: f.data, today: new Date().toDateString() });
   if (r.error) { await db('upload_set', { id, status: 'failed', error: r.error }); return json({ status: 'failed', error: r.error }); }
-  await db('upload_set', { id, status: 'review', ai: r.ai, error: '' });
-  return json({ status: 'review', ai: r.ai });
+  const status = autoStatus(r.ai);
+  await db('upload_set', { id, status, ai: r.ai, error: '' });
+  return json({ status, ai: r.ai });
 }
