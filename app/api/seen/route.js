@@ -27,3 +27,13 @@ export async function GET() {
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   return json({ who, since, items });
 }
+
+// Close the banner: count everything up to now as seen, until something new arrives.
+export async function POST() {
+  const role = await getRole();
+  if (!role) return deny();
+  const who = (await getWho()) || (role === 'mom' ? 'Naheed' : 'Family');
+  const now = new Date().toISOString();
+  await db('kv_set', { key: 'seen:' + who, value: JSON.stringify({ prev: now, last: now }) }).catch(() => {});
+  return json({ ok: true });
+}
