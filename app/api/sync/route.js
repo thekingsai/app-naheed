@@ -7,7 +7,7 @@ import { runRadnet } from '@/lib/portals/run-radnet';
 import { runMedstar, grant, clientId } from '@/lib/portals/medstar';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 export async function GET() {
   if ((await getRole()) !== 'family') return deny();

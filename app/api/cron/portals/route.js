@@ -7,7 +7,7 @@ import { runRadnet } from '@/lib/portals/run-radnet';
 import { runMedstar, grant } from '@/lib/portals/medstar';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const maxDuration = 800;
 
 function allowed(req) {
   const want = process.env.CRON_SECRET || '';
