@@ -22,7 +22,7 @@ export async function GET() {
   if (!since) return json({ who, since: null, items: [] });
   let list = [];
   try { list = await db('upload_list', {}); } catch {}
-  const items = list.filter((u) => u.created_at > since && ['confirmed', 'review', 'flagged'].includes(u.status) && (role !== 'mom' || u.status === 'confirmed'))
+  const items = list.filter((u) => u.created_at > since && ['confirmed', 'review'].includes(u.status) && (role !== 'mom' || u.status === 'confirmed'))
     .map((u) => ({ id: u.id, title: u.ai?.title || u.name, kind: u.ai?.kind || '', date: u.ai?.date || '', plain: role === 'mom' ? (u.ai?.plain || '') : '', from: origin(u), at: u.created_at }))
     .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   return json({ who, since, items });
