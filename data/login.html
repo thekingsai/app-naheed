@@ -1157,6 +1157,27 @@ body[data-tab=focus] .fopts{right:126px}
 .vb-f{margin-top:auto;padding-top:10px;border-top:1px dashed var(--line);display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--muted)}
 .vb-f b{color:var(--ink);font-weight:600}
 .vb-open{white-space:nowrap}
+
+/* document view: findings and next steps */
+#up-root .upx-ic,#up-root .upx-h .ico{color:var(--vc)}
+#up-root .upx-ic{background:color-mix(in srgb,var(--vc) 14%,var(--card));color:var(--vc)}
+#up-root .upx-g.said{background:color-mix(in srgb,var(--vc) 12%,var(--card));color:var(--ink)}
+.upx-find{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.upx-find li{position:relative;padding:10px 12px 10px 16px;border-radius:12px;background:var(--c2);font-size:14.5px;line-height:1.5}
+.upx-find li::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:3px;background:var(--vc)}
+.upx-find b{font-weight:600}
+.upx-more summary{cursor:pointer;font-size:13px;color:var(--pri);padding:6px 0;list-style:none}
+.upx-more summary::-webkit-details-marker{display:none}
+.upx-more[open] summary{display:none}
+.upx-also{margin:2px 0 0;font-size:13.5px;line-height:1.6;color:var(--muted)}
+.upx-also span{font-weight:600;color:var(--ink);margin-right:8px}
+.upx-steps{display:grid;gap:8px;margin-top:2px}
+.upx-step{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:14px;border:1px solid var(--line)}
+.upx-sic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--vc) 14%,var(--card));color:var(--vc);flex-shrink:0}
+.upx-sic .ico{width:16px;height:16px}
+.upx-sl{display:block;font-size:13px;font-weight:600;margin:5px 0 4px}
+.upx-step ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:14px;line-height:1.45}
+.upx-admin{margin:2px 2px 0;font-size:12.5px;color:var(--muted)}
 </style><style>.lg{min-height:100vh;display:grid;place-items:center;padding:24px}.lg .card{width:100%;max-width:380px;display:grid;gap:14px;padding:28px}.lg h1{font-size:26px}.lg input{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}.lg .err{color:var(--bad);font-size:14px;min-height:20px}</style></head><body>
 <div class="lg"><form class="card" onsubmit="go(event)"><div style="display:flex;align-items:center;gap:10px"><svg viewBox="0 0 64 64" width="40" height="40" aria-hidden="true"><defs><linearGradient id="gbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#gbg)"/><path d="M32 49s-15-8.6-15-20.2C17 23.1 21.1 19 26.2 19c2.6 0 4.6 1.3 5.8 3.2 1.2-1.9 3.2-3.2 5.8-3.2C42.9 19 47 23.1 47 28.8 47 40.4 32 49 32 49z" fill="#fff"/><path d="M20 33h7l2.5-5 4 9 2.5-4h8" fill="none" stroke="#8b5cf6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><h1>AiHealth</h1></div>
 <p class="muted">Private family app. Enter your password.</p>
