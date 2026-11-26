@@ -1178,6 +1178,72 @@ body[data-tab=focus] .fopts{right:126px}
 .upx-sl{display:block;font-size:13px;font-weight:600;margin:5px 0 4px}
 .upx-step ul{margin:0;padding-left:18px;display:grid;gap:3px;font-size:14px;line-height:1.45}
 .upx-admin{margin:2px 2px 0;font-size:12.5px;color:var(--muted)}
+/* ===== Health Profile, compact ===== */
+.pf .card-h h2{font-size:17px}
+.pf-sub{font-size:12.5px}
+.pf-card{padding:14px 16px}
+.pf-allergy{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;background:var(--bad-c);color:var(--bad);border-radius:14px;padding:8px 14px;font-size:14px}
+.pf-al-h{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.pf-al-h .ico{stroke:currentColor}
+.pf-allergy b{color:var(--ink);font-weight:600}
+.pf-allergy>span{color:var(--ink2)}
+.pf-allergy .pf-al-n{color:var(--ink2);font-size:13px;flex-basis:100%;opacity:.9}
+.pf-top{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
+.pf-mid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.pf-mid>:nth-child(1){grid-column:1}
+.pf-mid>:nth-child(2){grid-column:2;grid-row:1/span 2}
+.pf-mid>:nth-child(3){grid-column:1}
+@media (min-width:1500px){.pf-mid{grid-template-columns:repeat(3,minmax(0,1fr))}.pf-mid>:nth-child(n){grid-column:auto;grid-row:auto}}
+.pf-t{width:100%;border-collapse:collapse;font-size:14px}
+.pf-t td,.pf-t th{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top;text-align:left}
+.pf-t tr:first-child td{border-top:0}
+.pf-t th{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);border-top:0;padding-top:0}
+.pf-t td.n{font-weight:500;color:var(--ink)}
+.pf-cond td.n,.pf-med td.n{white-space:nowrap}
+.pf-t td.x{color:var(--ink2)}
+.pf-t td.s{text-align:right;width:1%;white-space:nowrap}
+.pf-t .chip{font-size:11.5px;padding:2px 8px}
+.pf-t tr.pf-g td{background:var(--c2);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:4px 8px;border-top:0}
+.pf-t tr.pf-g+tr td{border-top:0}
+.pf-t tr[onclick]{cursor:pointer}
+.pf-t tr[onclick]:hover td{background:color-mix(in srgb,var(--pri) 5%,transparent)}
+.pf-foot{margin:6px 0 0;padding:8px 8px 0;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.pf-foot b{color:var(--ink2);font-weight:600}
+.pf-past{margin-top:6px;padding:0 8px;font-size:13px;color:var(--muted)}
+.pf-past summary{cursor:pointer;list-style:none;padding:4px 0}
+.pf-past summary::-webkit-details-marker{display:none}
+.pf-past summary b{color:var(--pri);font-weight:600;margin-right:6px}
+.pf-past[open] summary{margin-bottom:4px}
+.pf-past .pf-t{font-size:13px}
+.pf-ct td.n{white-space:nowrap}
+.pf-med td.n small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+.pf-med td.x{white-space:nowrap}
+#pf-tl td.src{display:table-cell}
+#pf-tl td.src .pf-arr{display:inline}
+#prof-appts .lnk{font:inherit;color:var(--pri);padding:0;background:none;border:0;cursor:pointer}
+/* timeline */
+.pf-tlbar{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}
+.pf-tlbar .fchip span{color:var(--muted);font-weight:400;margin-left:2px}
+.pf-tlbar .fchip[aria-pressed="true"] span{color:inherit;opacity:.75}
+#pf-tl td.d{white-space:nowrap;color:var(--muted);width:64px}
+#pf-tl td.ty{width:1%;white-space:nowrap}
+.pf-ty{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--pri);background:var(--pri-c);border-radius:999px;padding:2px 9px 2px 7px}
+.pf-ty .ico{width:13px;height:13px;stroke:currentColor}
+#pf-tl td.x{color:var(--ink)}
+#pf-tl td.src{white-space:nowrap;color:var(--muted);font-size:12.5px;text-align:right;width:1%}
+.pf-arr{font-style:normal;margin-left:8px;color:var(--pri);font-size:15px;line-height:1}
+.pf-more{margin:8px 8px 0;font-size:13.5px}
+@media (max-width:900px){.pf-top,.pf-mid{grid-template-columns:1fr}.pf-mid>:nth-child(n){grid-column:auto;grid-row:auto}}
+@media (max-width:600px){
+ .pf-t td,.pf-t th{padding:6px 4px}
+ .pf-cond td.n,.pf-med td.n{white-space:normal}
+ .pf-cond td.x{display:none}
+ .pf-med tr.pf-th{display:none}
+ .pf-med td.x{white-space:normal}
+ #pf-tl td.ty .pf-ty{font-size:0;padding:4px;gap:0}
+ #pf-tl td.src{display:none}
+ #pf-tl td.d{width:52px;font-size:12.5px}
+}
 
 /* ===== Colour system (Option 2): one indigo for structure + red/amber/green only for status =====
    Indigo  = the app itself: icons, headers, links, taps, charts
